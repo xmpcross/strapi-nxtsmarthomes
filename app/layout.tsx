@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import { Geist } from 'next/font/google';
 import './globals.css';
 import Header from '@/components/Header';
+import { listProductCategories } from '@/lib/commerce';
 import Footer from '@/components/Footer';
 import CookieConsent from '@/components/CookieConsent';
 import { jsonLd, organizationJsonLd, websiteJsonLd } from "@/lib/seo";
@@ -43,11 +44,19 @@ export const metadata: Metadata = {
   },
 };
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default async function RootLayout({ children }: { children: React.ReactNode }) {
+  // Product categories for the header menu, read from the commerce-site row's
+  // enabledCategories. Failing soft costs a menu entry; throwing would take
+  // every page on the site down with the CMS.
+  const productCategories = (await listProductCategories().catch(() => [])).map((c) => ({
+    slug: c.slug,
+    title: c.name,
+  }));
+
   return (
     <html lang="en" className={geist.variable}>
       <body className="min-h-screen flex flex-col font-sans font-normal" data-testid="app-shell">
-        <Header />
+        <Header productCategories={productCategories} />
         <main className="flex-1">{children}</main>
         <Footer />
         <CookieConsent />
