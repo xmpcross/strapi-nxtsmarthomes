@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import Link from 'next/link';
 import LegalArticle from '@/components/LegalArticle';
 import { SITE } from '@/lib/site';
 
@@ -161,7 +162,7 @@ export default function Page() {
         <li>
           If you want to terminate the Terms, you may do so by providing FXN Holdings with days&apos;
           notice of your intention to terminate by sending notice of your intention to terminate to
-          FXN Holdings via the &apos;Contact Us&apos; link on our homepage.
+          FXN Holdings via our <Link href="/contact" className="underline">contact page</Link>.
         </li>
         <li>
           FXN Holdings may at any time, terminate the Terms with you if:
