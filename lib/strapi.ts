@@ -118,13 +118,25 @@ export function coverImageSrc(post: NxtSmartPost): string | null {
   return post.coverImageUrl ?? null;
 }
 
+/*
+ * The nxtsmart-post and nxtsmart-category types are shared with
+ * nxtsmarthome.com.au. Without this filter every query here also returned that
+ * site's articles, and they were being published on this domain as our own —
+ * duplicate content across two domains competing for the same search results.
+ *
+ * Every query below must carry it. The `site` field was added on 13 Aug 2026 and
+ * defaults to 'nxtsmart.homes', so existing content needs no change.
+ */
+const SITE = 'nxtsmart.homes';
+const SITE_FILTER = { site: { $eq: SITE } } as const;
+
 const POST_POPULATE = ["coverImage", "ogImage", "categories", "gallery", "author"];
 const POST_DETAIL_POPULATE = { coverImage: true, ogImage: true, categories: true, gallery: true, author: { populate: ["avatar"] }, comments: { filters: { commentStatus: { "$eq": "approved" } }, sort: ["postedAt:desc"] } };
 
 export async function listPosts(
   opts: { page?: number; pageSize?: number; category?: string; postType?: NxtSmartPostType; q?: string } = {},
 ) {
-  const filters: Record<string, unknown> = {};
+  const filters: Record<string, unknown> = { ...SITE_FILTER };
   if (opts.category) filters.categories = { slug: { $eqi: opts.category } };
   if (opts.postType) filters.postType = { $eq: opts.postType };
   if (opts.q?.trim()) {
@@ -153,7 +165,7 @@ export async function listPosts(
 export async function getPost(slug: string): Promise<NxtSmartPost | null> {
   const res = await strapiFetch<ListResponse<NxtSmartPost>>('nxtsmart-posts', {
     status: "published",
-    filters: { slug: { $eq: slug } },
+    filters: { ...SITE_FILTER, slug: { $eq: slug } },
     populate: POST_DETAIL_POPULATE,
     pagination: { pageSize: 1 },
   });
@@ -162,6 +174,7 @@ export async function getPost(slug: string): Promise<NxtSmartPost | null> {
 
 export async function listCategories(): Promise<NxtSmartCategory[]> {
   const res = await strapiFetch<ListResponse<NxtSmartCategory>>('nxtsmart-categories', {
+    filters: { ...SITE_FILTER },
     sort: ['order:asc', 'name:asc'],
     populate: ['parent', 'children'],
     pagination: { pageSize: 100 },
@@ -171,7 +184,7 @@ export async function listCategories(): Promise<NxtSmartCategory[]> {
 
 export async function getCategory(slug: string): Promise<NxtSmartCategory | null> {
   const res = await strapiFetch<ListResponse<NxtSmartCategory>>('nxtsmart-categories', {
-    filters: { slug: { $eqi: slug } },
+    filters: { ...SITE_FILTER, slug: { $eqi: slug } },
     populate: ['parent', 'children'],
     pagination: { pageSize: 1 },
   });
@@ -184,6 +197,7 @@ export async function listAllPostSlugs(): Promise<{ slug: string; category: stri
   while (true) {
     const res = await strapiFetch<ListResponse<NxtSmartPost>>('nxtsmart-posts', {
     status: "published",
+      filters: { ...SITE_FILTER },
       fields: ['slug', 'updatedAt'],
       populate: { categories: { fields: ['slug'] } },
       sort: ['publishedAt:desc'],
