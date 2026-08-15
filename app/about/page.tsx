@@ -155,6 +155,32 @@ function Community() {
             title="More than a source — a community"
             subtitle={`${SITE.name} is a place to share thoughts, ask questions, and explore the endless possibilities of the smart-tech universe — whether you're a seasoned expert or just starting out.`}
           />
+
+          {/*
+            The About page carried mission and vision but nothing verifiable:
+            no operating entity, no jurisdiction and no route to a human. That
+            is the first page a reader or an affiliate reviewer checks, so it
+            now states the operator in the same terms as the legal pages.
+
+            Named authors are deliberately absent rather than invented — that
+            item stays open until there are real people to name.
+          */}
+          <div className="mt-8 rounded-xl border border-ink/8 bg-surface p-6 shadow-card" data-testid="about-operator">
+            <h3 className="font-display text-xl font-bold tracking-tight text-ink">Who we are</h3>
+            <p className="mt-3 text-base leading-7 text-ink-muted">
+              {SITE.name} is published by <strong className="text-ink">FXN Holdings</strong>, a business
+              based in Western Australia. We research smart home products from published specifications,
+              compatibility documentation and merchant information — our{' '}
+              <Link href="/editorial-policy" className="font-semibold text-primary hover:underline">
+                editorial policy
+              </Link>{' '}
+              sets out the scoring criteria and says plainly where we have not tested a device ourselves.
+            </p>
+            <p className="mt-3 text-base leading-7 text-ink-muted">
+              Questions or corrections go to our{' '}
+              <Link href="/contact" className="font-semibold text-primary hover:underline">contact page</Link>.
+            </p>
+          </div>
         </div>
       </div>
     </section>

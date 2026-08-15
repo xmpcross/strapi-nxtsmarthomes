@@ -41,6 +41,27 @@ export default function ContactPage() {
                 hello@nxtsmart.homes
               </a>
             </p>
+
+            {/*
+              The operator was named only in the legal pages, so the two pages a
+              reader or an affiliate reviewer checks first — About and Contact —
+              said nothing verifiable about who runs the site. Entity and
+              jurisdiction are stated here exactly as they appear in the Terms
+              and Privacy pages, so the three cannot drift apart.
+            */}
+            <div className="mt-8 rounded-xl border border-ink/8 bg-muted/60 p-5" data-testid="contact-operator">
+              <p className="text-xs font-bold uppercase tracking-[0.15em] text-primary">Who runs this site</p>
+              <p className="mt-2 text-sm leading-6 text-ink-muted">
+                {SITE.name} is published by <strong className="text-ink">FXN Holdings</strong>, a business
+                based in Western Australia. Our{' '}
+                <Link href="/editorial-policy" className="font-semibold text-primary hover:underline">editorial policy</Link>
+                {' '}explains how we research and score products, and our{' '}
+                <Link href="/legal/terms" className="font-semibold text-primary hover:underline">terms</Link>
+                {' '}and{' '}
+                <Link href="/legal/privacy" className="font-semibold text-primary hover:underline">privacy policy</Link>
+                {' '}set out the legal detail.
+              </p>
+            </div>
           </div>
           <ContactForm />
         </div>

@@ -9,6 +9,9 @@ export const metadata: Metadata = {
   alternates: { canonical: '/editorial-policy' },
 };
 
+/** When this policy last actually changed, per the file's git history. */
+const POLICY_MODIFIED_LABEL = 'Jul 30, 2026';
+
 const principles = [
   ['Practical homeowner focus', 'We prioritize setup difficulty, compatibility, privacy, reliability, ongoing costs and day-to-day usefulness over manufacturer claims.'],
   ['Clear review criteria', 'Product coverage considers ecosystem support, installation, automation options, app quality, local-control support, subscriptions and long-term value.'],
@@ -79,6 +82,19 @@ export default function EditorialPolicyPage() {
           </p>
           <Link href="/contact" className="mt-5 inline-flex rounded-xl bg-primary px-5 py-2.5 text-sm font-bold text-white hover:bg-primary-emphasis">Contact us</Link>
         </div>
+
+        {/*
+          The other legal pages carry a last-updated date and this one did not,
+          which is the sort of gap a reviewer notices on a page whose whole job
+          is establishing editorial credibility.
+
+          The date is when this policy last actually changed, taken from the
+          file's history — not today's date. Stamping an unchanged policy as
+          freshly updated is the dishonest version of this fix.
+        */}
+        <p className="mt-8 text-sm text-ink-faint" data-testid="editorial-policy-updated">
+          Last updated: {POLICY_MODIFIED_LABEL}
+        </p>
       </section>
     </div>
   );

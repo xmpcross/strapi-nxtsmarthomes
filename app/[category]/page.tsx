@@ -45,11 +45,27 @@ export async function generateMetadata({
   const baseDescription = sectionMeta?.blurb || categoryRecord?.description || `${name} from ${SITE.name} — ${SITE.tagline}`;
   const pageSuffix = page > 1 ? ` — Page ${page}` : "";
   const canonical = `/${category}${page > 1 ? `?page=${page}` : ""}`;
+
+  /*
+   * An empty category archive is a thin-content signal sitting in the index,
+   * and five of them were live and indexable: /uncategorized,
+   * /coupons-and-deals, /smart-home-energy, /smart-home-integration and
+   * /smart-home-entertainment, all at zero published posts.
+   *
+   * Derived from the post count rather than a hardcoded list, so a category
+   * starts being indexed the moment it has content and needs no follow-up
+   * deploy — and so a category that empties out is covered too. `follow` stays
+   * true: there is nothing worth indexing here, but the links out are still
+   * worth crawling.
+   */
+  const { meta } = await listPosts({ category, pageSize: 1 }).catch(() => ({ meta: null }));
+  const isEmpty = meta?.pagination?.total === 0;
+
   return {
     title: `${name}${pageSuffix}`,
     description: page > 1 ? `${baseDescription} Page ${page}.` : baseDescription,
     alternates: { canonical },
-    robots: hasViewParam ? { index: false, follow: true } : undefined,
+    robots: hasViewParam || isEmpty ? { index: false, follow: true } : undefined,
   };
 }
 

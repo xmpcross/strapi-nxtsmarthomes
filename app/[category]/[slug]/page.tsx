@@ -14,6 +14,7 @@ import PostShareRail from '@/components/PostShareRail';
 import { breadcrumbJsonLd, jsonLd, personJsonLd, publisherJsonLd } from '@/lib/seo';
 import { sanitizeCommerceClaims } from '@/lib/sanitizeCommerce';
 import { extractToc, isWpImportedContent, transformWpContent } from '@/lib/wpContent';
+import { normaliseInternalLinks } from '@/lib/internalLinks';
 
 export const revalidate = 60;
 export const dynamicParams = true;
@@ -95,7 +96,12 @@ export default async function PostPage({ params }: { params: Promise<Params> }) 
   // Every post type goes through the same transform now, so a review renders
   // with the same markup — and the same typography — as an informative post.
   const useWpTransform = isWpImportedContent(post.content);
-  const contentHtml = useWpTransform ? transformWpContent(post.content) : sanitizeCommerceClaims(post.content);
+  // Link normalisation runs on both branches: the WordPress transform and the
+  // plain sanitiser produce the same trailing-slashed, host-qualified links,
+  // so fixing it inside either one would miss half the posts.
+  const contentHtml = normaliseInternalLinks(
+    useWpTransform ? transformWpContent(post.content) : sanitizeCommerceClaims(post.content),
+  );
   const toc = extractToc(contentHtml);
   // Inline product boxes. One batched catalogue lookup for every ::product:
   // marker in the body; a post with no markers makes no request at all. A
