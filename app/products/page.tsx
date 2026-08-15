@@ -3,7 +3,6 @@ import type { Metadata } from 'next';
 import { listProductCategories, listProducts, productCategoryPath } from '@/lib/commerce';
 import ProductBox from '@/components/ProductBox';
 import SectionHeader from '@/components/SectionHeader';
-import { SITE } from '@/lib/site';
 import { breadcrumbJsonLd, jsonLd } from '@/lib/seo';
 
 export const revalidate = 300;
@@ -28,12 +27,17 @@ export default async function ProductsIndexPage() {
 
   return (
     <div className="mx-auto w-full max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
-      {jsonLd(
-        breadcrumbJsonLd([
-          { name: 'Home', url: SITE.url },
-          { name: 'Products', url: `${SITE.url}/products` },
-        ]),
-      )}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: jsonLd(
+            breadcrumbJsonLd([
+              { name: 'Home', url: '/' },
+              { name: 'Products', url: '/products' },
+            ]),
+          ),
+        }}
+      />
 
       <SectionHeader
         eyebrow="Catalogue"

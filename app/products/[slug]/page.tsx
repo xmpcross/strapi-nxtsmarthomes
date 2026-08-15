@@ -11,7 +11,6 @@ import {
   type CommerceOffer,
 } from '@/lib/commerce';
 import SectionHeader from '@/components/SectionHeader';
-import { SITE } from '@/lib/site';
 import { absoluteUrl, breadcrumbJsonLd, jsonLd, trimDescription } from '@/lib/seo';
 
 export const revalidate = 300;
@@ -117,17 +116,25 @@ export default async function ProductPage({ params }: { params: Promise<Params> 
 
   return (
     <div className="mx-auto w-full max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
-      {jsonLd(
-        breadcrumbJsonLd([
-          { name: 'Home', url: SITE.url },
-          { name: 'Products', url: `${SITE.url}/products` },
-          ...(category
-            ? [{ name: category.name, url: `${SITE.url}${productCategoryPath(category.slug)}` }]
-            : []),
-          { name: product.name, url: `${SITE.url}/products/${product.slug}` },
-        ]),
-      )}
-      {jsonLd({
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: jsonLd(
+            breadcrumbJsonLd([
+              { name: 'Home', url: '/' },
+              { name: 'Products', url: '/products' },
+              ...(category
+                ? [{ name: category.name, url: productCategoryPath(category.slug) }]
+                : []),
+              { name: product.name, url: `/products/${product.slug}` },
+            ]),
+          ),
+        }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: jsonLd({
         '@context': 'https://schema.org',
         '@type': 'Product',
         name: product.name,
@@ -165,7 +172,9 @@ export default async function ProductPage({ params }: { params: Promise<Params> 
               },
             }
           : {}),
-      })}
+          }),
+        }}
+      />
 
       <nav className="mb-4 text-sm text-ink-muted" aria-label="Breadcrumb">
         <Link href="/products" className="font-semibold text-primary hover:underline">

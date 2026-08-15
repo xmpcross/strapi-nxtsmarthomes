@@ -9,7 +9,6 @@ import {
 } from '@/lib/commerce';
 import ProductBox from '@/components/ProductBox';
 import SectionHeader from '@/components/SectionHeader';
-import { SITE } from '@/lib/site';
 import { breadcrumbJsonLd, jsonLd, trimDescription } from '@/lib/seo';
 
 export const revalidate = 300;
@@ -76,13 +75,18 @@ export default async function ProductCategoryPage({
 
   return (
     <div className="mx-auto w-full max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
-      {jsonLd(
-        breadcrumbJsonLd([
-          { name: 'Home', url: SITE.url },
-          { name: 'Products', url: `${SITE.url}/products` },
-          { name: category.name, url: `${SITE.url}${productCategoryPath(slug)}` },
-        ]),
-      )}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: jsonLd(
+            breadcrumbJsonLd([
+              { name: 'Home', url: '/' },
+              { name: 'Products', url: '/products' },
+              { name: category.name, url: productCategoryPath(slug) },
+            ]),
+          ),
+        }}
+      />
 
       <nav className="mb-4 text-sm text-ink-muted" aria-label="Breadcrumb">
         <Link href="/products" className="font-semibold text-primary hover:underline">
