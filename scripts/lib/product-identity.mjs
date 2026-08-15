@@ -39,9 +39,44 @@ export function tokens(s) {
     .filter((t) => t.length > 2 && !STOP.has(t));
 }
 
-/** A token mixing letters and digits is almost always a model designator. */
+/**
+ * Alphanumeric tokens that look like model designators but identify nothing.
+ *
+ * Ordinals are the worst offenders: "2nd" mixes a digit and letters, so a naive
+ * check called it a model designator and every "… 2nd Gen" product matched every
+ * other. That is how "Google Nest Mini 2nd Gen" in an article was matched to the
+ * catalogue's Google Nest Cam Outdoor 2nd Gen.
+ *
+ * Lamp bases and bulb shapes are the same problem one step subtler — A19, E27
+ * and BR30 are open standards every manufacturer builds to, so matching on them
+ * paired a GE CYNC A19 article with a Philips Hue A19 record.
+ */
+const NON_MODEL = /^(\d+(st|nd|rd|th)|a1[59]|a60|b\d{2}|br\d{2}|e1[24]|e2[67]|par\d{2}|gu10|mr16|\d+w|\d+k|\d+v|\d+ch|\d+mp|\d+p|4k|8k|1080p?|720p?)$/;
+
+/**
+ * Words that pick one product out of a range: Echo Dot vs Echo Dot Max, Ring
+ * Battery Doorbell Pro vs Ring Video Doorbell Pro, 2nd Gen vs 5th Gen. These
+ * are the tokens whose absence matters most, so a plain overlap ratio treats
+ * them as ordinary words and quietly conflates generations.
+ */
+const VARIANT = new Set([
+  'max', 'pro', 'plus', 'mini', 'ultra', 'lite', 'air', 'elite', 'premium',
+  '1st', '2nd', '3rd', '4th', '5th', '6th', '7th', '8th', '9th', '10th',
+]);
+
+/** True when both names name a variant and they share none of them. */
+function variantsConflict(productTokens, textTokens) {
+  const a = productTokens.filter((t) => VARIANT.has(t));
+  if (!a.length) return false;
+  const b = [...textTokens].filter((t) => VARIANT.has(t));
+  if (!b.length) return false;
+  return !a.some((t) => b.includes(t));
+}
+
+/** A token mixing letters and digits is usually a model designator — with exceptions. */
 export function isModelToken(t) {
-  return /\d/.test(t) && /[a-z]/.test(t);
+  if (!/\d/.test(t) || !/[a-z]/.test(t)) return false;
+  return !NON_MODEL.test(t);
 }
 
 /**
@@ -57,8 +92,35 @@ export function textNamesProduct(productName, text, textTokens = null) {
   const set = textTokens ?? new Set(tokens(text));
 
   const models = pt.filter(isModelToken);
-  if (models.length) return models.some((m) => set.has(m));
-  return pt.every((t) => set.has(t));
+
+  if (models.length) {
+    // A true model designator (p110m, kp125m) is near-unique, so a shared one
+    // plus any other shared word is enough. The ordinals and lamp-base codes
+    // that used to cause false matches never reach here — NON_MODEL excludes
+    // them, so this path now sees only genuinely distinctive designators.
+    if (!models.some((m) => set.has(m))) return false;
+    const rest = pt.filter((t) => !isModelToken(t));
+    return rest.length === 0 || rest.some((t) => set.has(t));
+  }
+
+  /*
+   * No model designator, so identity rests on the words alone.
+   *
+   * Requiring every token was too strict — "Google Nest Cam Outdoor 2nd Gen
+   * Wired" then failed to match an article about the Google Nest Cam Outdoor
+   * 2nd Gen, purely on the trailing "Wired". But three quarters was too loose:
+   * "Amazon Echo Dot Max" matched a heading about the "Amazon Echo Dot 5th Gen
+   * Clock" on 3 of 4 tokens, and a Ring Battery Doorbell Pro matched a Ring
+   * Video Doorbell Pro heading the same way. In both, the single missing token
+   * WAS the product's identity.
+   *
+   * So: four fifths, plus an explicit check that the variant words do not
+   * contradict each other. Where both names carry a variant and they share
+   * none, they are different products however much else lines up.
+   */
+  if (variantsConflict(pt, set)) return false;
+  const present = pt.filter((t) => set.has(t)).length;
+  return present / pt.length >= 0.8;
 }
 
 /** Prepared token set for text that will be tested against many product names. */
