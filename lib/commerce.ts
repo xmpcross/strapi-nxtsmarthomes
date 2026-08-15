@@ -54,6 +54,46 @@ export const CATEGORY_SLUGS = [
   'smart-speakers',
 ] as const;
 
+/** The domain whose commerce-site row owns this site's category list. */
+const SITE_DOMAIN = 'nxtsmart.homes';
+
+let scopeCache: { slugs: string[]; at: number } | null = null;
+
+/**
+ * Which product categories this site shows — read from Strapi.
+ *
+ * The commerce-site row for nxtsmart.homes carries them in `enabledCategories`,
+ * so adding or removing a category is a CMS edit rather than a deploy. That row
+ * is the control point; CATEGORY_SLUGS above is only the fallback.
+ *
+ * The fallback matters more than it looks. Product listings fail closed on an
+ * empty scope, so if the site row were unreachable and this returned nothing,
+ * every product page would render "no products" while the build still reported
+ * success — the same silent-empty failure mode the CMS has caused here before.
+ * Falling back to the last known-good list keeps the site up.
+ */
+export async function getScopeSlugs(): Promise<string[]> {
+  if (scopeCache && Date.now() - scopeCache.at < 300_000) return scopeCache.slugs;
+  try {
+    const res = await commerceFetch<ListResponse<{ enabledCategories?: string[] | null }>>(
+      'commerce-sites',
+      {
+        filters: { domain: { $eq: SITE_DOMAIN } },
+        fields: ['enabledCategories'],
+        pagination: { pageSize: 1 },
+      },
+    );
+    const slugs = res.data?.[0]?.enabledCategories;
+    if (Array.isArray(slugs) && slugs.length) {
+      scopeCache = { slugs: slugs.filter((s) => typeof s === 'string' && s), at: Date.now() };
+      return scopeCache.slugs;
+    }
+  } catch {
+    // fall through to the built-in list
+  }
+  return [...CATEGORY_SLUGS];
+}
+
 /*
  * `smart-tvs` was in this list and was removed deliberately. It held 82 of the
  * 140 products — 59% of the catalogue — while yielding 3 of 34 article ideas,
@@ -164,10 +204,10 @@ const PRODUCT_POPULATE = {
 } as const;
 
 /** The scope filter. Never build a product query without it — see the file header. */
-function scopeFilter(extra: Record<string, unknown> = {}) {
+async function scopeFilter(extra: Record<string, unknown> = {}) {
   return {
     productStatus: { $eq: 'active' },
-    categories: { slug: { $in: [...CATEGORY_SLUGS] } },
+    categories: { slug: { $in: await getScopeSlugs() } },
     ...extra,
   };
 }
@@ -235,19 +275,20 @@ export function formatPrice(price?: number | null, currency?: string | null): st
 
 /** The product categories this site shows, in the order CATEGORY_SLUGS lists them. */
 export async function listProductCategories(): Promise<CommerceCategory[]> {
+  const slugs = await getScopeSlugs();
   const res = await commerceFetch<ListResponse<CommerceCategory>>('commerce-categories', {
-    filters: { slug: { $in: [...CATEGORY_SLUGS] } },
+    filters: { slug: { $in: slugs } },
     fields: ['name', 'slug', 'description', 'icon'],
-    pagination: { pageSize: CATEGORY_SLUGS.length },
+    pagination: { pageSize: Math.max(slugs.length, 1) },
   });
-  const order = new Map(CATEGORY_SLUGS.map((s, i) => [s, i]));
-  return (res.data ?? []).sort(
-    (a, b) => (order.get(a.slug as never) ?? 99) - (order.get(b.slug as never) ?? 99),
-  );
+  // Rendered in the order the CMS lists them, so the site row controls
+  // presentation order as well as membership.
+  const order = new Map(slugs.map((s, i) => [s, i]));
+  return (res.data ?? []).sort((a, b) => (order.get(a.slug) ?? 99) - (order.get(b.slug) ?? 99));
 }
 
 export async function getProductCategory(slug: string): Promise<CommerceCategory | null> {
-  if (!(CATEGORY_SLUGS as readonly string[]).includes(slug)) return null;
+  if (!(await getScopeSlugs()).includes(slug)) return null;
   const res = await commerceFetch<ListResponse<CommerceCategory>>('commerce-categories', {
     filters: { slug: { $eq: slug } },
     fields: ['name', 'slug', 'description', 'icon'],
@@ -261,12 +302,12 @@ export async function listProducts(
 ): Promise<{ products: CommerceProduct[]; total: number; pageCount: number }> {
   // An unknown category must return nothing rather than falling back to the
   // whole catalogue, which would silently ignore the scope.
-  if (opts.category && !(CATEGORY_SLUGS as readonly string[]).includes(opts.category)) {
+  if (opts.category && !(await getScopeSlugs()).includes(opts.category)) {
     return { products: [], total: 0, pageCount: 0 };
   }
   const filters = opts.category
-    ? scopeFilter({ categories: { slug: { $eq: opts.category } } })
-    : scopeFilter();
+    ? await scopeFilter({ categories: { slug: { $eq: opts.category } } })
+    : await scopeFilter();
 
   const res = await commerceFetch<ListResponse<CommerceProduct>>('commerce-products', {
     status: 'published',
@@ -285,7 +326,7 @@ export async function listProducts(
 export async function getProduct(slug: string): Promise<CommerceProduct | null> {
   const res = await commerceFetch<ListResponse<CommerceProduct>>('commerce-products', {
     status: 'published',
-    filters: scopeFilter({ slug: { $eq: slug } }),
+    filters: await scopeFilter({ slug: { $eq: slug } }),
     populate: PRODUCT_POPULATE,
     pagination: { pageSize: 1 },
   });
@@ -304,7 +345,7 @@ export async function getProductsBySlugs(slugs: string[]): Promise<CommerceProdu
   if (!unique.length) return [];
   const res = await commerceFetch<ListResponse<CommerceProduct>>('commerce-products', {
     status: 'published',
-    filters: scopeFilter({ slug: { $in: unique } }),
+    filters: await scopeFilter({ slug: { $in: unique } }),
     populate: PRODUCT_POPULATE,
     pagination: { pageSize: unique.length },
   });
@@ -317,7 +358,7 @@ export async function listAllProductSlugs(): Promise<{ slug: string; updatedAt: 
   for (let page = 1; page <= 20; page++) {
     const res = await commerceFetch<ListResponse<CommerceProduct>>('commerce-products', {
       status: 'published',
-      filters: scopeFilter(),
+      filters: await scopeFilter(),
       fields: ['slug', 'updatedAt'],
       pagination: { page, pageSize: 100 },
     });

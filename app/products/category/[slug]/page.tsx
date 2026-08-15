@@ -2,7 +2,7 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import type { Metadata } from 'next';
 import {
-  CATEGORY_SLUGS,
+  getScopeSlugs,
   getProductCategory,
   listProducts,
   productCategoryPath,
@@ -12,17 +12,17 @@ import SectionHeader from '@/components/SectionHeader';
 import { breadcrumbJsonLd, jsonLd, trimDescription } from '@/lib/seo';
 
 export const revalidate = 300;
-// The catalogue is a fixed, small allowlist, so every valid category is known at
-// build time. Anything else is a 404 rather than an on-demand render.
-export const dynamicParams = false;
+// Categories come from the CMS now, so one added in Strapi after a build must
+// render on demand rather than 404 until the next deploy.
+export const dynamicParams = true;
 
 const PAGE_SIZE = 24;
 
 type Params = { slug: string };
 type SearchParams = { page?: string };
 
-export function generateStaticParams() {
-  return CATEGORY_SLUGS.map((slug) => ({ slug }));
+export async function generateStaticParams() {
+  return (await getScopeSlugs()).map((slug) => ({ slug }));
 }
 
 export async function generateMetadata({
