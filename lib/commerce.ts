@@ -48,8 +48,23 @@ export const CATEGORY_SLUGS = [
   'smart-door-locks',
   'video-doorbells',
   'smart-speakers',
-  'smart-tvs',
 ] as const;
+
+/*
+ * `smart-tvs` was in this list and was removed deliberately. It held 82 of the
+ * 140 products — 59% of the catalogue — while yielding 3 of 34 article ideas,
+ * and because listings sort by rating count it dominated /products, which read
+ * as a TV shop rather than a smart home section.
+ *
+ * The deciding evidence was the data itself. TV records carry display
+ * specifications (V-chip, HDMI Ports, Resolution, Anti-glare, Screen Form) and
+ * exactly one smart-home attribute between them, so nothing written from that
+ * data is smart-home content. Median offer price was $2,300 against $25-$220
+ * for every other category here, and 2 of 140 published posts touch TVs at all.
+ *
+ * Re-add the slug if entertainment becomes a deliberate content push — the
+ * products are still in Strapi and nothing else needs changing.
+ */
 
 export type CommerceMerchant = {
   id: number;
