@@ -51,7 +51,7 @@ export function tokens(s) {
  * and BR30 are open standards every manufacturer builds to, so matching on them
  * paired a GE CYNC A19 article with a Philips Hue A19 record.
  */
-const NON_MODEL = /^(\d+(st|nd|rd|th)|a1[59]|a60|b\d{2}|br\d{2}|e1[24]|e2[67]|par\d{2}|gu10|mr16|\d+w|\d+k|\d+v|\d+ch|\d+mp|\d+p|4k|8k|1080p?|720p?)$/;
+const NON_MODEL = /^(\d+(st|nd|rd|th)|a1[59]|a60|b\d{2}|br\d{2}|e1[24]|e2[67]|par\d{2}|gu10|mr16|\d+w|\d+k|\d+v|\d+ch|\d+mp|\d+p|\d+lm|\d+lux|4k|8k|1080p?|720p?)$/;
 
 /**
  * Words that pick one product out of a range: Echo Dot vs Echo Dot Max, Ring
@@ -62,6 +62,13 @@ const NON_MODEL = /^(\d+(st|nd|rd|th)|a1[59]|a60|b\d{2}|br\d{2}|e1[24]|e2[67]|pa
 const VARIANT = new Set([
   'max', 'pro', 'plus', 'mini', 'ultra', 'lite', 'air', 'elite', 'premium',
   '1st', '2nd', '3rd', '4th', '5th', '6th', '7th', '8th', '9th', '10th',
+  // Lamp shapes and bases discriminate exactly like variants. They are excluded
+  // from model designators above because every manufacturer builds to them, but
+  // two bulbs differing only in shape are still different products: "Philips
+  // Hue Essential A19" is not "Philips Hue Essential BR30", and word overlap
+  // alone happily conflated them.
+  'a19', 'a21', 'a60', 'br30', 'br40', 'st19', 'st64', 'g25', 'g95',
+  'e26', 'e27', 'e12', 'e14', 'gu10', 'mr16', 'par20', 'par30', 'par38',
 ]);
 
 /** True when both names name a variant and they share none of them. */
