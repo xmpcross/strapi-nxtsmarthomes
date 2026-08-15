@@ -13,16 +13,22 @@ const EDITORIAL = SECTIONS.filter((s) =>
 );
 const SMART_HOME = SECTIONS.filter((s) => s.slug.startsWith('smart-home-'));
 
+/** Menu entries only need a slug and a label, so product categories fit too. */
+type NavItem = { slug: string; title: string; href?: string };
+
 function NavDropdown({
   label,
   group,
   sections,
   linkTone,
+  hrefBase = '/',
 }: {
   label: string;
   group: string;
-  sections: typeof SECTIONS;
+  sections: NavItem[];
   linkTone: string;
+  /** Product categories live under /products/category/, editorial ones at the root. */
+  hrefBase?: string;
 }) {
   return (
     <li className="group/nav relative" data-testid={`nav-item-${group}`}>
@@ -55,7 +61,7 @@ function NavDropdown({
         {sections.map((s) => (
           <Link
             key={s.slug}
-            href={`/${s.slug}`}
+            href={s.href ?? `${hrefBase}${s.slug}`}
             className="rounded-xl px-3 py-2.5 text-sm text-ink-muted transition-colors hover:bg-muted hover:text-primary"
             role="menuitem"
             data-testid={`nav-${group}-${s.slug}`}
@@ -68,7 +74,16 @@ function NavDropdown({
   );
 }
 
-export default function Header() {
+export default function Header({
+  productCategories = [],
+}: {
+  /**
+   * Product categories for the Products menu, read from Strapi by the layout.
+   * Empty renders no Products entry at all rather than an empty dropdown, so a
+   * CMS outage costs a menu item instead of showing a broken one.
+   */
+  productCategories?: NavItem[];
+} = {}) {
   // Borderless at the top of the page; once the sticky header is pinned by
   // scrolling, elevate it with a shadow instead.
   //
@@ -165,6 +180,15 @@ export default function Header() {
                 About
               </Link>
             </li>
+            {productCategories.length > 0 && (
+              <NavDropdown
+                label="Products"
+                group="products"
+                sections={[{ slug: 'all', title: 'All products', href: '/products' }, ...productCategories]}
+                hrefBase="/products/category/"
+                linkTone={linkTone}
+              />
+            )}
             <NavDropdown label="Editorial" group="editorial" sections={EDITORIAL} linkTone={linkTone} />
             <NavDropdown label="Smart Home" group="smart-home" sections={SMART_HOME} linkTone={linkTone} />
             <li>

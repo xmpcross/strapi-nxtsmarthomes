@@ -14,3 +14,6 @@ next.log
 
 # 62 MB WordPress export kept for reference on the box; not repo content.
 backups/
+
+# Generated analysis output (scripts/propose-product-articles.mjs)
+reports/

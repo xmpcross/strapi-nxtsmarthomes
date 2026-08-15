@@ -4,7 +4,8 @@ import type { Metadata } from 'next';
 import { getPost, listPosts, mediaUrl, coverImageSrc, type NxtSmartPost } from '@/lib/strapi';
 import { DEFAULT_AUTHOR, SECTIONS, SITE } from '@/lib/site';
 import { fmtDate, primaryCategorySlug, postPath } from '@/lib/format';
-import PostContent from '@/components/PostContent';
+import ArticleBody, { extractProductSlugs } from '@/components/ArticleBody';
+import { getProductsBySlugs } from '@/lib/commerce';
 import PostSidebar from '@/components/PostSidebar';
 import CommentsSection from '@/components/CommentsSection';
 import PostGallery from '@/components/PostGallery';
@@ -96,6 +97,14 @@ export default async function PostPage({ params }: { params: Promise<Params> }) 
   const useWpTransform = isWpImportedContent(post.content);
   const contentHtml = useWpTransform ? transformWpContent(post.content) : sanitizeCommerceClaims(post.content);
   const toc = extractToc(contentHtml);
+  // Inline product boxes. One batched catalogue lookup for every ::product:
+  // marker in the body; a post with no markers makes no request at all. A
+  // catalogue outage must not take the article down with it, so this degrades
+  // to prose rather than throwing — the same posture as the sidebar fetch.
+  const productSlugs = extractProductSlugs(contentHtml);
+  const inlineProducts = productSlugs.length
+    ? await getProductsBySlugs(productSlugs).catch(() => [])
+    : [];
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const tags: string[] = (post as any).tags ?? [];
   const chips = [
@@ -236,7 +245,7 @@ export default async function PostPage({ params }: { params: Promise<Params> }) 
                 </nav>
               )}
 
-              <PostContent html={contentHtml} />
+              <ArticleBody content={contentHtml} products={inlineProducts} />
 
               <PostGallery images={post.gallery} postTitle={post.title} />
 
