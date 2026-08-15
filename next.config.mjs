@@ -11,6 +11,9 @@ const nextConfig = {
   async redirects() {
     return [
       { source: "/contact-us", destination: "/contact", statusCode: 301 },
+      // /about-us is a commonly guessed URL and returned a live 404. The long
+      // WordPress slug below already redirected; the short form did not.
+      { source: "/about-us", destination: "/about", statusCode: 301 },
       { source: "/about-us-find-the-top-smart-home-devices-expert-guides", destination: "/about", statusCode: 301 },
       { source: "/privacy-policy", destination: "/legal/privacy", statusCode: 301 },
       { source: "/terms-of-use", destination: "/legal/terms", statusCode: 301 },
