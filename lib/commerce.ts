@@ -13,18 +13,22 @@ import qs from 'qs';
  * unfiltered query returns face serums and AU-priced robot vacuums alongside
  * the smart plugs we actually want.
  *
- * There is a `site` relation on commerce-product for exactly this, but no
- * commerce-site row exists for nxtsmart.homes yet — only bestlooking.skin (0
- * products) and nxtsmarthome.com.au (205). 561 products are unscoped. So the
- * scope is expressed here as a category allowlist instead, which needs no write
- * to the shared CMS and is reversible.
+ * There is a `site` relation on commerce-product for exactly this. A
+ * commerce-site row for this domain now exists — id 6, `nxtsmart.homes`,
+ * US/USD, carrying these same slugs in `enabledCategories` — but **no products
+ * are related to it yet**, so it cannot do any filtering. Ownership is a
+ * genuine decision rather than a config step: the 58 products in these
+ * categories are unscoped records sourced for nxt.bargains, and `site` is
+ * manyToOne, so relating them here takes them from that catalogue rather than
+ * sharing them.
  *
- * The proper fix is a commerce-site row for this domain with its
- * `enabledCategories` populated, and the relevant products related to it; then
- * CATEGORY_SLUGS collapses into a single site filter. Until then, every exported
- * query in this file MUST constrain by CATEGORY_SLUGS — a query without it is a
+ * Until that is settled, CATEGORY_SLUGS below is the operative scope and every
+ * exported query in this file MUST constrain by it. A query without it is a
  * cross-property content leak, the same class of bug as the editorial one that
  * put nxtsmarthome.com.au articles on this domain.
+ *
+ * When products are related, this collapses into a single site filter and
+ * `enabledCategories` on the site row becomes the source of truth.
  */
 
 const BASE = (process.env.NEXT_PUBLIC_STRAPI_URL || 'https://cms.fxnstudio.com').replace(/\/$/, '');
