@@ -328,23 +328,44 @@ export async function getProductCategory(slug: string): Promise<CommerceCategory
   return res.data?.[0] ?? null;
 }
 
+/** Sort orders offered in the listing UI, mapped to Strapi sort clauses. */
+export const PRODUCT_SORTS = {
+  popular: ['ratingCount:desc', 'name:asc'],
+  'name-asc': ['name:asc'],
+  newest: ['updatedAt:desc', 'name:asc'],
+} as const;
+
+export type ProductSort = keyof typeof PRODUCT_SORTS;
+
+export type ProductListOpts = {
+  category?: string;
+  page?: number;
+  pageSize?: number;
+  brands?: string[];
+  sort?: ProductSort;
+};
+
 export async function listProducts(
-  opts: { category?: string; page?: number; pageSize?: number } = {},
+  opts: ProductListOpts = {},
 ): Promise<{ products: CommerceProduct[]; total: number; pageCount: number }> {
   // An unknown category must return nothing rather than falling back to the
   // whole catalogue, which would silently ignore the scope.
   if (opts.category && !(await getScopeSlugs()).includes(opts.category)) {
     return { products: [], total: 0, pageCount: 0 };
   }
-  const filters = opts.category
-    ? await scopeFilter({ categories: { slug: { $eq: opts.category } } })
-    : await scopeFilter();
+  const extra: Record<string, unknown> = {};
+  if (opts.category) extra.categories = { slug: { $eq: opts.category } };
+  // Brands arrive from the query string, so they are matched case-insensitively
+  // against the value rather than trusted as exact — `$in` is case-sensitive and
+  // would drop "TP-Link" for "tp-link".
+  const brands = (opts.brands ?? []).filter(Boolean);
+  if (brands.length) extra.$or = brands.map((b) => ({ brand: { $eqi: b } }));
 
   const res = await commerceFetch<ListResponse<CommerceProduct>>('commerce-products', {
     status: 'published',
-    filters,
+    filters: await scopeFilter(extra),
     populate: PRODUCT_POPULATE,
-    sort: ['ratingCount:desc', 'name:asc'],
+    sort: [...(PRODUCT_SORTS[opts.sort ?? 'popular'] ?? PRODUCT_SORTS.popular)],
     pagination: { page: opts.page ?? 1, pageSize: opts.pageSize ?? 24 },
   });
   return {
@@ -352,6 +373,48 @@ export async function listProducts(
     total: res.meta?.pagination?.total ?? 0,
     pageCount: res.meta?.pagination?.pageCount ?? 0,
   };
+}
+
+/**
+ * Brands present in a category, with a count each, for the filter sidebar.
+ *
+ * Read from the products themselves rather than commerce-brands: that table is
+ * the shared pool's brand list and is not scoped to this site, so it would offer
+ * filters that match nothing here. Facet counts must come from the same query
+ * the grid uses or the sidebar promises results the grid cannot show.
+ */
+export async function listCategoryBrands(
+  category?: string,
+): Promise<{ name: string; count: number }[]> {
+  if (category && !(await getScopeSlugs()).includes(category)) return [];
+  const extra = category ? { categories: { slug: { $eq: category } } } : {};
+  const counts = new Map<string, { name: string; count: number }>();
+  let page = 1;
+  while (page <= 10) {
+    const res = await commerceFetch<ListResponse<Pick<CommerceProduct, 'brand'>>>(
+      'commerce-products',
+      {
+        status: 'published',
+        filters: await scopeFilter(extra),
+        fields: ['brand'],
+        pagination: { page, pageSize: 100 },
+      },
+    );
+    for (const row of res.data ?? []) {
+      const name = row.brand?.trim();
+      if (!name) continue;
+      const key = name.toLowerCase();
+      const seen = counts.get(key);
+      if (seen) seen.count += 1;
+      else counts.set(key, { name, count: 1 });
+    }
+    const pageCount = res.meta?.pagination?.pageCount ?? 1;
+    if (page >= pageCount) break;
+    page += 1;
+  }
+  return [...counts.values()].sort(
+    (a, b) => b.count - a.count || a.name.localeCompare(b.name),
+  );
 }
 
 export async function getProduct(slug: string): Promise<CommerceProduct | null> {
