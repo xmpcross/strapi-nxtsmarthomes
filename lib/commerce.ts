@@ -37,22 +37,25 @@ const TOKEN = process.env.STRAPI_API_TOKEN;
 /**
  * Whether this site shows a product catalogue at all.
  *
- * Turned off on 2026-09-10. The catalogue this site was rendering belongs to
- * nxt.bargains — all 47 products in scope carry the `nxt-bargains` tag and were
- * only reaching this domain through shared category relations — and their
- * offers were fabricated: identical five prices on every product, and buy-links
+ * Turned off on 2026-09-10 because the catalogue this site rendered belonged to
+ * nxt.bargains — all 47 products in scope carried the `nxt-bargains` tag and
+ * reached this domain only through shared category relations — and their offers
+ * were fabricated: identical five prices on every product, and buy-links
  * pointing at domains that do not resolve.
  *
- * Deliberately a switch here rather than a deletion in Strapi. The products are
- * nxt.bargains' live inventory; removing them from the CMS would empty that
- * storefront too. This removes them from *this* site and nothing else.
+ * Turned back on the same day, to restore the Products menu. The reason above
+ * has since been settled at the source rather than worked around here: those
+ * products, their fabricated offers and the whole shared commerce catalogue were
+ * deleted from Strapi.
  *
- * With this false, every product query short-circuits, the Products menu drops
- * out of the header, and the product routes 404 rather than rendering empty
- * shells for crawlers to index. Flip it back to true when this site has a
- * catalogue of its own.
+ * So the menu is back but the shelves are bare. listProductCategories reads
+ * commerce-categories, which survived the deletion, so the header renders; every
+ * product query behind it returns nothing until a catalogue is imported. Note
+ * getScopeSlugs cannot confirm a CMS scope while no products exist — its
+ * scopeHasProducts check fails and it falls back to CATEGORY_SLUGS below, which
+ * is the intended behaviour for an empty catalogue, not a misconfiguration.
  */
-export const CATALOGUE_ENABLED = false;
+export const CATALOGUE_ENABLED = true;
 
 /**
  * The catalogue this site is allowed to show when CATALOGUE_ENABLED is true:
