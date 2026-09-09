@@ -11,7 +11,7 @@ import {
   type CommerceOffer,
 } from '@/lib/commerce';
 import SectionHeader from '@/components/SectionHeader';
-import { productDescriptionHtml } from '@/lib/markdown';
+import { descriptionToPlainText, productDescriptionHtml } from '@/lib/markdown';
 import { absoluteUrl, breadcrumbJsonLd, jsonLd, trimDescription } from '@/lib/seo';
 
 export const revalidate = 300;
@@ -31,7 +31,9 @@ export async function generateMetadata({ params }: { params: Promise<Params> }):
   const product = await getProduct(slug).catch(() => null);
   if (!product) return { title: 'Not found' };
   const description = trimDescription(
-    product.shortDescription || product.description || `${product.name} — specifications, prices and where to buy.`,
+    product.shortDescription ||
+      descriptionToPlainText(product.description || '') ||
+      `${product.name} — specifications, prices and where to buy.`,
   );
   const img = productImage(product);
   return {
@@ -147,7 +149,12 @@ export default async function ProductPage({ params }: { params: Promise<Params> 
         ...(product.brand ? { brand: { '@type': 'Brand', name: product.brand } } : {}),
         ...(img ? { image: img } : {}),
         ...(product.shortDescription || product.description
-          ? { description: trimDescription(product.shortDescription || product.description || '', 300) }
+          ? {
+              description: trimDescription(
+                product.shortDescription || descriptionToPlainText(product.description || ''),
+                300,
+              ),
+            }
           : {}),
         // Only emitted when the catalogue actually carries a rating and a count.
         // A fabricated aggregateRating is both a lie to the reader and a

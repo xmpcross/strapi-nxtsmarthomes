@@ -116,6 +116,30 @@ export function markdownToHtml(markdown: string): string {
 }
 
 /**
+ * A description reduced to plain prose, for meta tags and structured data.
+ *
+ * Those fields are read by machines and shown verbatim in search results, so
+ * markup in them is not cosmetic: the raw CMS text opens with `## <name>`, which
+ * was being emitted straight into meta description, OpenGraph, Twitter cards and
+ * the Product JSON-LD. Strips the leading heading, then the inline syntax, and
+ * collapses the line breaks that a snippet would otherwise render as gaps.
+ */
+export function descriptionToPlainText(description: string): string {
+  return String(description || "")
+    .replace(/^#{2,4}\s+.*(?:\n|$)/, "")
+    .replace(/^#{1,6}\s+/gm, "")
+    .replace(/\[([^\]]+)\]\((?:https?:\/\/)?[^\s)]*\)/g, "$1")
+    .replace(/\*\*([^*]+)\*\*/g, "$1")
+    .replace(/\*([^*]+)\*/g, "$1")
+    .replace(/^[-*]\s+/gm, "")
+    .replace(/^\d+[.)]\s+/gm, "")
+    .replace(/^\|.*\|$/gm, "")
+    .replace(/^---+$/gm, "")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+/**
  * Product descriptions as HTML.
  *
  * The CMS writes them as markdown opening with an `## <product name>` heading
