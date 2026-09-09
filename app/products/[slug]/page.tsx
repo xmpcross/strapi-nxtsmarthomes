@@ -11,6 +11,7 @@ import {
   type CommerceOffer,
 } from '@/lib/commerce';
 import SectionHeader from '@/components/SectionHeader';
+import { productDescriptionHtml } from '@/lib/markdown';
 import { absoluteUrl, breadcrumbJsonLd, jsonLd, trimDescription } from '@/lib/seo';
 
 export const revalidate = 300;
@@ -108,6 +109,11 @@ export default async function ProductPage({ params }: { params: Promise<Params> 
       if (aOut !== bOut) return aOut ? 1 : -1;
       return (a.price ?? Infinity) - (b.price ?? Infinity);
     });
+
+  // Rendered from markdown: the CMS stores descriptions with an `## Name`
+  // heading and paragraph breaks, which printed literally as "## …" when this
+  // was dropped into a <p>.
+  const descriptionHtml = productDescriptionHtml(product.description || '');
 
   const specs = Object.entries(product.specs ?? {}).filter(
     // Pipeline bookkeeping, not specifications the reader wants.
@@ -218,10 +224,8 @@ export default async function ProductPage({ params }: { params: Promise<Params> 
             </p>
           )}
 
-          {(product.shortDescription || product.description) && (
-            <p className="mt-4 text-sm leading-relaxed text-ink-muted">
-              {product.shortDescription || product.description}
-            </p>
+          {product.shortDescription && (
+            <p className="mt-4 text-sm leading-relaxed text-ink-muted">{product.shortDescription}</p>
           )}
 
           <div className="mt-6 rounded-2xl border border-ink/8 bg-surface p-5 shadow-card">
@@ -288,6 +292,16 @@ export default async function ProductPage({ params }: { params: Promise<Params> 
               </tbody>
             </table>
           </div>
+        </section>
+      )}
+
+      {descriptionHtml && (
+        <section className="mt-12">
+          <SectionHeader eyebrow="Overview" title="Description" />
+          <div
+            className="post-content prose prose-slate mt-4 max-w-prose text-ink-muted"
+            dangerouslySetInnerHTML={{ __html: descriptionHtml }}
+          />
         </section>
       )}
 
