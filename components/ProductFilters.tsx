@@ -63,7 +63,7 @@ export default function ProductFilters({
     >
       <div className="lg:sticky lg:top-24 lg:max-h-[calc(100vh-7rem)] lg:overflow-y-auto lg:pr-1">
         <div className="flex items-baseline justify-between gap-3">
-          <h2 className="text-sm font-semibold uppercase tracking-wide text-ink">Filters</h2>
+          <h2 className="!text-base font-semibold uppercase tracking-wide text-ink">Filters</h2>
           {hasFilters && (
             <Link
               href={basePath}
@@ -80,7 +80,7 @@ export default function ProductFilters({
 
         {categories.length > 0 && (
           <section className="mt-6">
-            <h3 className="text-base font-semibold uppercase tracking-wide text-ink-muted">
+            <h3 className="!text-sm font-semibold uppercase tracking-wide text-ink-muted">
               Category
             </h3>
             <ul className="mt-2 space-y-0.5">
@@ -129,7 +129,7 @@ export default function ProductFilters({
                 see what is narrowing their results. */}
             <details className="group" open={selected.size > 0}>
               <summary className="flex cursor-pointer list-none items-center justify-between gap-2 rounded-lg py-1 [&::-webkit-details-marker]:hidden">
-                <h3 className="text-base font-semibold uppercase tracking-wide text-ink-muted">
+                <h3 className="!text-sm font-semibold uppercase tracking-wide text-ink-muted">
                   Brand
                   {selected.size > 0 && (
                     <span className="ml-2 rounded-full bg-primary-soft px-2 py-0.5 text-xs font-semibold normal-case tracking-normal text-primary">
@@ -184,7 +184,7 @@ export default function ProductFilters({
         )}
 
         <section className="mt-6">
-          <h3 className="text-base font-semibold uppercase tracking-wide text-ink-muted">Sort by</h3>
+          <h3 className="!text-sm font-semibold uppercase tracking-wide text-ink-muted">Sort by</h3>
           <ul className="mt-2 space-y-0.5">
             {SORTS.map((s) => {
               const on = s.value === activeSort;
