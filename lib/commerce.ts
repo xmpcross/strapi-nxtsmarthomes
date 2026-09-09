@@ -71,9 +71,22 @@ let scopeCache: { slugs: string[]; at: number } | null = null;
  * every product page would render "no products" while the build still reported
  * success — the same silent-empty failure mode the CMS has caused here before.
  * Falling back to the last known-good list keeps the site up.
+ *
+ * That guard covered two cases — row unreachable, and `enabledCategories` empty
+ * — and missed the one that actually happened. On 2026-09-09 the row was
+ * rewritten to four `smart-home-*` slugs that exist as categories but contain
+ * no products at all. A perfectly valid, non-empty scope that matches nothing:
+ * the guard passed it straight through and the whole storefront went dark while
+ * the build reported success, exactly the failure the comment above describes.
+ *
+ * So a scope now has to hold at least one product to be believed. If the CMS
+ * names categories that are all empty, that is a misconfiguration rather than
+ * an editorial decision to sell nothing, and the built-in list is the better
+ * answer. An intentionally empty storefront is not a thing this site supports.
  */
 export async function getScopeSlugs(): Promise<string[]> {
   if (scopeCache && Date.now() - scopeCache.at < 300_000) return scopeCache.slugs;
+  const fallback = [...CATEGORY_SLUGS];
   try {
     const res = await commerceFetch<ListResponse<{ enabledCategories?: string[] | null }>>(
       'commerce-sites',
@@ -83,15 +96,33 @@ export async function getScopeSlugs(): Promise<string[]> {
         pagination: { pageSize: 1 },
       },
     );
-    const slugs = res.data?.[0]?.enabledCategories;
-    if (Array.isArray(slugs) && slugs.length) {
-      scopeCache = { slugs: slugs.filter((s) => typeof s === 'string' && s), at: Date.now() };
-      return scopeCache.slugs;
+    const raw = res.data?.[0]?.enabledCategories;
+    const slugs = Array.isArray(raw) ? raw.filter((s) => typeof s === 'string' && s) : [];
+    if (slugs.length && (await scopeHasProducts(slugs))) {
+      scopeCache = { slugs, at: Date.now() };
+      return slugs;
     }
   } catch {
     // fall through to the built-in list
   }
-  return [...CATEGORY_SLUGS];
+  scopeCache = { slugs: fallback, at: Date.now() };
+  return fallback;
+}
+
+/** Does this set of category slugs contain any published product at all? */
+async function scopeHasProducts(slugs: string[]): Promise<boolean> {
+  try {
+    const res = await commerceFetch<ListResponse<{ slug: string }>>('commerce-products', {
+      filters: { productStatus: { $eq: 'active' }, categories: { slug: { $in: slugs } } },
+      fields: ['slug'],
+      pagination: { pageSize: 1 },
+    });
+    return (res.meta?.pagination?.total ?? res.data?.length ?? 0) > 0;
+  } catch {
+    // If the check itself fails, trust the CMS rather than override it on a
+    // network blip — a wrong scope is recoverable, a flapping one is not.
+    return true;
+  }
 }
 
 /*
