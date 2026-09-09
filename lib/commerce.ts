@@ -461,3 +461,90 @@ export async function listAllProductSlugs(): Promise<{ slug: string; updatedAt: 
   }
   return out;
 }
+
+export type CommerceReview = {
+  id: number;
+  documentId?: string;
+  authorName?: string | null;
+  rating?: number | null;
+  title?: string | null;
+  body?: string | null;
+  createdAt?: string;
+};
+
+/**
+ * Approved reviews for one product.
+ *
+ * TWO REASONS THIS RETURNS NOTHING TODAY, both outside the frontend:
+ *   1. `commerce-reviews` answers 403 to the public role, and this site runs
+ *      without STRAPI_API_TOKEN by design. Granting public find on that
+ *      collection in Strapi is what switches it on.
+ *   2. All 7,204 reviews in the pool belong to nxt.bargains phones; not one is
+ *      related to a product in this site's scope.
+ *
+ * Wired up regardless so the section appears the moment either is fixed, and
+ * fails soft so a 403 costs an empty section rather than a broken page.
+ */
+export async function listProductReviews(
+  productSlug: string,
+  limit = 12,
+): Promise<CommerceReview[]> {
+  try {
+    const res = await commerceFetch<ListResponse<CommerceReview>>('commerce-reviews', {
+      filters: {
+        product: { slug: { $eq: productSlug } },
+        reviewStatus: { $eq: 'approved' },
+      },
+      fields: ['authorName', 'rating', 'title', 'body', 'createdAt'],
+      sort: ['createdAt:desc'],
+      pagination: { pageSize: limit },
+    });
+    return res.data ?? [];
+  } catch {
+    return [];
+  }
+}
+
+/**
+ * Other products to show at the foot of a product page.
+ *
+ * Prefers the same category, then tops up from the wider scope if that category
+ * is thin — a related strip with two items reads as a mistake. Always scope
+ * filtered, and always excludes the product being viewed.
+ */
+export async function listRelatedProducts(
+  slug: string,
+  categorySlug?: string,
+  limit = 10,
+): Promise<CommerceProduct[]> {
+  const seen = new Set<string>([slug]);
+  const out: CommerceProduct[] = [];
+
+  const take = (rows: CommerceProduct[]) => {
+    for (const p of rows) {
+      if (out.length >= limit) return;
+      if (seen.has(p.slug)) continue;
+      seen.add(p.slug);
+      out.push(p);
+    }
+  };
+
+  if (categorySlug) {
+    const sameCategory = await listProducts({
+      category: categorySlug,
+      pageSize: limit + 1,
+    }).catch(() => ({ products: [], total: 0, pageCount: 0 }));
+    take(sameCategory.products);
+  }
+
+  if (out.length < limit) {
+    const wider = await listProducts({ pageSize: limit * 2 }).catch(() => ({
+      products: [],
+      total: 0,
+      pageCount: 0,
+    }));
+    take(wider.products);
+  }
+
+  return out;
+}

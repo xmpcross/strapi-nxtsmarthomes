@@ -8,9 +8,12 @@ import {
   offerUrl,
   productCategoryPath,
   productImage,
+  listProductReviews,
+  listRelatedProducts,
   type CommerceOffer,
 } from '@/lib/commerce';
 import SectionHeader from '@/components/SectionHeader';
+import RelatedProductsCarousel from '@/components/RelatedProductsCarousel';
 import { descriptionToPlainText, productDescriptionHtml } from '@/lib/markdown';
 import { absoluteUrl, breadcrumbJsonLd, jsonLd, trimDescription } from '@/lib/seo';
 
@@ -116,6 +119,13 @@ export default async function ProductPage({ params }: { params: Promise<Params> 
   // heading and paragraph breaks, which printed literally as "## …" when this
   // was dropped into a <p>.
   const descriptionHtml = productDescriptionHtml(product.description || '');
+
+  // Both fail soft: neither is worth a 500 on a page whose job is the
+  // product itself.
+  const [reviews, related] = await Promise.all([
+    listProductReviews(product.slug).catch(() => []),
+    listRelatedProducts(product.slug, category?.slug, 10).catch(() => []),
+  ]);
 
   const specs = Object.entries(product.specs ?? {}).filter(
     // Pipeline bookkeeping, not specifications the reader wants.
@@ -324,6 +334,50 @@ export default async function ProductPage({ params }: { params: Promise<Params> 
                 </div>
               ))}
             </dl>
+          </div>
+        </section>
+      )}
+
+      {reviews.length > 0 && (
+        <section className="mt-12">
+          <SectionHeader
+            eyebrow="Reviews"
+            title={`${reviews.length} ${reviews.length === 1 ? 'review' : 'reviews'}`}
+          />
+          <ul className="mt-4 grid gap-4 sm:grid-cols-2">
+            {reviews.map((r) => (
+              <li
+                key={r.documentId ?? r.id}
+                className="rounded-2xl border border-ink/8 bg-surface p-5 shadow-card"
+              >
+                <div className="flex items-center justify-between gap-3">
+                  <span className="text-sm font-semibold text-ink">
+                    {r.authorName || 'Verified shopper'}
+                  </span>
+                  {typeof r.rating === 'number' && (
+                    <span className="text-sm font-bold text-primary" aria-label={`${r.rating} out of 5`}>
+                      {'\u2605'.repeat(Math.round(r.rating))}
+                      <span className="text-ink-faint">{'\u2605'.repeat(5 - Math.round(r.rating))}</span>
+                    </span>
+                  )}
+                </div>
+                {r.title && <p className="mt-2 font-semibold text-ink">{r.title}</p>}
+                {r.body && <p className="mt-1 text-sm leading-relaxed text-ink-muted">{r.body}</p>}
+              </li>
+            ))}
+          </ul>
+          <p className="mt-3 text-[11px] text-ink-faint">
+            Reviews are published by merchants, not by NXTSmart.Homes, and no one here has tested this
+            product.
+          </p>
+        </section>
+      )}
+
+      {related.length > 0 && (
+        <section className="mt-12">
+          <SectionHeader eyebrow="You might also like" title="Related products" />
+          <div className="mt-4">
+            <RelatedProductsCarousel products={related} />
           </div>
         </section>
       )}
