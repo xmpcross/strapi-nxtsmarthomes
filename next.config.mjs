@@ -11,6 +11,10 @@ const nextConfig = {
   async redirects() {
     return [
       { source: "/contact-us", destination: "/contact", statusCode: 301 },
+      // The product index moved to /all-products. Product detail and category
+      // pages stay under /products/, so this must not be a wildcard — a
+      // /products/:path* rule would swallow every product URL on the site.
+      { source: "/products", destination: "/all-products", statusCode: 301 },
       // /about-us is a commonly guessed URL and returned a live 404. The long
       // WordPress slug below already redirected; the short form did not.
       { source: "/about-us", destination: "/about", statusCode: 301 },

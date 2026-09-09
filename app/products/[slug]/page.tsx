@@ -122,7 +122,7 @@ export default async function ProductPage({ params }: { params: Promise<Params> 
           __html: jsonLd(
             breadcrumbJsonLd([
               { name: 'Home', url: '/' },
-              { name: 'Products', url: '/products' },
+              { name: 'Products', url: '/all-products' },
               ...(category
                 ? [{ name: category.name, url: productCategoryPath(category.slug) }]
                 : []),
@@ -177,7 +177,7 @@ export default async function ProductPage({ params }: { params: Promise<Params> 
       />
 
       <nav className="mb-4 text-sm text-ink-muted" aria-label="Breadcrumb">
-        <Link href="/products" className="font-semibold text-primary hover:underline">
+        <Link href="/all-products" className="font-semibold text-primary hover:underline">
           Products
         </Link>
         {category && (

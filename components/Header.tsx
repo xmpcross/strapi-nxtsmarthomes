@@ -184,7 +184,7 @@ export default function Header({
               <NavDropdown
                 label="Products"
                 group="products"
-                sections={[{ slug: 'all', title: 'All products', href: '/products' }, ...productCategories]}
+                sections={[{ slug: 'all', title: 'All products', href: '/all-products' }, ...productCategories]}
                 hrefBase="/products/category/"
                 linkTone={linkTone}
               />

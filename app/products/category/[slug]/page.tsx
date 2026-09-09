@@ -120,7 +120,7 @@ export default async function ProductCategoryPage({
           __html: jsonLd(
             breadcrumbJsonLd([
               { name: 'Home', url: '/' },
-              { name: 'Products', url: '/products' },
+              { name: 'Products', url: '/all-products' },
               { name: category.name, url: productCategoryPath(slug) },
             ]),
           ),
@@ -128,7 +128,7 @@ export default async function ProductCategoryPage({
       />
 
       <nav className="mb-4 text-sm text-ink-muted" aria-label="Breadcrumb">
-        <Link href="/products" className="font-semibold text-primary hover:underline">
+        <Link href="/all-products" className="font-semibold text-primary hover:underline">
           Products
         </Link>
         <span className="mx-2" aria-hidden="true">/</span>

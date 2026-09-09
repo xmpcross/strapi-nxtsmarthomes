@@ -13,7 +13,7 @@ const DESCRIPTION =
 export const metadata: Metadata = {
   title: 'Smart Home Products',
   description: DESCRIPTION,
-  alternates: { canonical: '/products' },
+  alternates: { canonical: '/all-products' },
 };
 
 export default async function ProductsIndexPage() {
@@ -33,7 +33,7 @@ export default async function ProductsIndexPage() {
           __html: jsonLd(
             breadcrumbJsonLd([
               { name: 'Home', url: '/' },
-              { name: 'Products', url: '/products' },
+              { name: 'Products', url: '/all-products' },
             ]),
           ),
         }}

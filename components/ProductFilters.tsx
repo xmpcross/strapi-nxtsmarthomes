@@ -86,7 +86,7 @@ export default function ProductFilters({
             <ul className="mt-2 space-y-0.5">
               <li>
                 <Link
-                  href="/products"
+                  href="/all-products"
                   aria-current={!activeCategory ? 'page' : undefined}
                   className={`block rounded-lg px-2 py-1.5 text-sm transition ${
                     !activeCategory
