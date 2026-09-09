@@ -1,6 +1,8 @@
 import Link from 'next/link';
 import type { Metadata } from 'next';
+import { notFound } from 'next/navigation';
 import {
+  CATALOGUE_ENABLED,
   listCategoryBrands,
   listProductCategories,
   listProducts,
@@ -56,6 +58,9 @@ export default async function ProductsIndexPage({
 }: {
   searchParams: Promise<SearchParams>;
 }) {
+  // The catalogue is off: 404 rather than serve an empty shell that crawlers
+  // would index as a thin page.
+  if (!CATALOGUE_ENABLED) notFound();
   const { page: pageRaw, brand: brandRaw, sort: sortRaw } = await searchParams;
   const page = Math.max(1, Number(pageRaw) || 1);
   const brands = toBrands(brandRaw);

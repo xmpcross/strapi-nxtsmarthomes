@@ -272,12 +272,26 @@
   dependencies:
     postcss-selector-parser "6.0.10"
 
+"@types/node@*":
+  version "22.20.2"
+  resolved "https://registry.yarnpkg.com/@types/node/-/node-22.20.2.tgz#daae777b5f5965a587f50cc80d5364c2ddf27e36"
+  integrity sha512-xlvWf4Vs9n1PEVYwP1n4vvG07M6y8WgvJ2t0vbrWTmijsIHp1cS+uJ2kMIRdY3nHZK0nCYKrPeD171+SzF4/zw==
+  dependencies:
+    undici-types "~6.21.0"
+
 "@types/node@^22.10.1":
   version "22.19.17"
   resolved "https://registry.npmjs.org/@types/node/-/node-22.19.17.tgz"
   integrity sha512-wGdMcf+vPYM6jikpS/qhg6WiqSV/OhG+jeeHT/KlVqxYfD40iYJf9/AE1uQxVWFvU7MipKRkRv8NSHiCGgPr8Q==
   dependencies:
     undici-types "~6.21.0"
+
+"@types/nodemailer@^8.0.1":
+  version "8.0.1"
+  resolved "https://registry.yarnpkg.com/@types/nodemailer/-/nodemailer-8.0.1.tgz#4ef2b4e62c819225a0b8a6384bf750c0c664d465"
+  integrity sha512-PxpaInm8V1JQDd4j0ds5HfvWQk8JupS1C0Picb96QJsrrRDjBH+DlK7L4ZdNSqNULhiZRQHc40nLVShaGxXAMw==
+  dependencies:
+    "@types/node" "*"
 
 "@types/qs@^6.9.17":
   version "6.15.0"
@@ -803,6 +817,11 @@ node-releases@^2.0.36:
   version "2.0.38"
   resolved "https://registry.npmjs.org/node-releases/-/node-releases-2.0.38.tgz"
   integrity sha512-3qT/88Y3FbH/Kx4szpQQ4HzUbVrHPKTLVpVocKiLfoYvw9XSGOX2FmD2d6DrXbVYyAQTF2HeF6My8jmzx7/CRw==
+
+nodemailer@^10.0.1:
+  version "10.0.1"
+  resolved "https://registry.yarnpkg.com/nodemailer/-/nodemailer-10.0.1.tgz#72b3c1f58c6833f99a5a182fab41cb092a2f4a25"
+  integrity sha512-c+gU9cL9HLDax3vjxL88kW+6NOgdtEUWaZ+AUtxdJR6LLhf0kGdCLExof7yiKW7zdO9EfXCSIgmhGyFmUM0mYQ==
 
 normalize-path@^3.0.0, normalize-path@~3.0.0:
   version "3.0.0"

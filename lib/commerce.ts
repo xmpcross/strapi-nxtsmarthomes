@@ -35,7 +35,28 @@ const BASE = (process.env.NEXT_PUBLIC_STRAPI_URL || 'https://cms.fxnstudio.com')
 const TOKEN = process.env.STRAPI_API_TOKEN;
 
 /**
- * The catalogue this site is allowed to show: US-market smart home.
+ * Whether this site shows a product catalogue at all.
+ *
+ * Turned off on 2026-09-10. The catalogue this site was rendering belongs to
+ * nxt.bargains — all 47 products in scope carry the `nxt-bargains` tag and were
+ * only reaching this domain through shared category relations — and their
+ * offers were fabricated: identical five prices on every product, and buy-links
+ * pointing at domains that do not resolve.
+ *
+ * Deliberately a switch here rather than a deletion in Strapi. The products are
+ * nxt.bargains' live inventory; removing them from the CMS would empty that
+ * storefront too. This removes them from *this* site and nothing else.
+ *
+ * With this false, every product query short-circuits, the Products menu drops
+ * out of the header, and the product routes 404 rather than rendering empty
+ * shells for crawlers to index. Flip it back to true when this site has a
+ * catalogue of its own.
+ */
+export const CATALOGUE_ENABLED = false;
+
+/**
+ * The catalogue this site is allowed to show when CATALOGUE_ENABLED is true:
+ * US-market smart home.
  *
  * Excluded on purpose:
  *   - facial-*, anti-aging, moisturisers, toners-*, exfoliators-*  → bestlooking.skin
@@ -85,6 +106,10 @@ let scopeCache: { slugs: string[]; at: number } | null = null;
  * answer. An intentionally empty storefront is not a thing this site supports.
  */
 export async function getScopeSlugs(): Promise<string[]> {
+  // Checked before the cache and before the CMS: an off catalogue is a decision,
+  // not the misconfiguration the fallback below exists to survive, so nothing
+  // downstream may override it.
+  if (!CATALOGUE_ENABLED) return [];
   if (scopeCache && Date.now() - scopeCache.at < 300_000) return scopeCache.slugs;
   const fallback = [...CATEGORY_SLUGS];
   try {
@@ -306,6 +331,7 @@ export function formatPrice(price?: number | null, currency?: string | null): st
 
 /** The product categories this site shows, in the order CATEGORY_SLUGS lists them. */
 export async function listProductCategories(): Promise<CommerceCategory[]> {
+  if (!CATALOGUE_ENABLED) return [];
   const slugs = await getScopeSlugs();
   const res = await commerceFetch<ListResponse<CommerceCategory>>('commerce-categories', {
     filters: { slug: { $in: slugs } },
@@ -319,6 +345,7 @@ export async function listProductCategories(): Promise<CommerceCategory[]> {
 }
 
 export async function getProductCategory(slug: string): Promise<CommerceCategory | null> {
+  if (!CATALOGUE_ENABLED) return null;
   if (!(await getScopeSlugs()).includes(slug)) return null;
   const res = await commerceFetch<ListResponse<CommerceCategory>>('commerce-categories', {
     filters: { slug: { $eq: slug } },
@@ -348,6 +375,7 @@ export type ProductListOpts = {
 export async function listProducts(
   opts: ProductListOpts = {},
 ): Promise<{ products: CommerceProduct[]; total: number; pageCount: number }> {
+  if (!CATALOGUE_ENABLED) return { products: [], total: 0, pageCount: 0 };
   // An unknown category must return nothing rather than falling back to the
   // whole catalogue, which would silently ignore the scope.
   if (opts.category && !(await getScopeSlugs()).includes(opts.category)) {
@@ -386,6 +414,7 @@ export async function listProducts(
 export async function listCategoryBrands(
   category?: string,
 ): Promise<{ name: string; count: number }[]> {
+  if (!CATALOGUE_ENABLED) return [];
   if (category && !(await getScopeSlugs()).includes(category)) return [];
   const extra = category ? { categories: { slug: { $eq: category } } } : {};
   const counts = new Map<string, { name: string; count: number }>();
@@ -418,6 +447,7 @@ export async function listCategoryBrands(
 }
 
 export async function getProduct(slug: string): Promise<CommerceProduct | null> {
+  if (!CATALOGUE_ENABLED) return null;
   const res = await commerceFetch<ListResponse<CommerceProduct>>('commerce-products', {
     status: 'published',
     filters: await scopeFilter({ slug: { $eq: slug } }),
@@ -435,6 +465,7 @@ export async function getProduct(slug: string): Promise<CommerceProduct | null> 
  * that is already a per-request dependency.
  */
 export async function getProductsBySlugs(slugs: string[]): Promise<CommerceProduct[]> {
+  if (!CATALOGUE_ENABLED) return [];
   const unique = [...new Set(slugs.filter(Boolean))];
   if (!unique.length) return [];
   const res = await commerceFetch<ListResponse<CommerceProduct>>('commerce-products', {
@@ -448,6 +479,7 @@ export async function getProductsBySlugs(slugs: string[]): Promise<CommerceProdu
 
 /** Slugs for generateStaticParams / sitemap. Scope-filtered like everything else. */
 export async function listAllProductSlugs(): Promise<{ slug: string; updatedAt: string }[]> {
+  if (!CATALOGUE_ENABLED) return [];
   const out: { slug: string; updatedAt: string }[] = [];
   for (let page = 1; page <= 20; page++) {
     const res = await commerceFetch<ListResponse<CommerceProduct>>('commerce-products', {
@@ -489,6 +521,7 @@ export async function listProductReviews(
   productSlug: string,
   limit = 12,
 ): Promise<CommerceReview[]> {
+  if (!CATALOGUE_ENABLED) return [];
   try {
     const res = await commerceFetch<ListResponse<CommerceReview>>('commerce-reviews', {
       filters: {
@@ -517,6 +550,7 @@ export async function listRelatedProducts(
   categorySlug?: string,
   limit = 10,
 ): Promise<CommerceProduct[]> {
+  if (!CATALOGUE_ENABLED) return [];
   const seen = new Set<string>([slug]);
   const out: CommerceProduct[] = [];
 

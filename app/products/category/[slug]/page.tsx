@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import type { Metadata } from 'next';
 import {
+  CATALOGUE_ENABLED,
   getScopeSlugs,
   getProductCategory,
   listCategoryBrands,
@@ -77,6 +78,7 @@ export default async function ProductCategoryPage({
   params: Promise<Params>;
   searchParams: Promise<SearchParams>;
 }) {
+  if (!CATALOGUE_ENABLED) notFound();
   const { slug } = await params;
   const { page: pageRaw, brand: brandRaw, sort: sortRaw } = await searchParams;
   const page = Math.max(1, Number(pageRaw) || 1);
