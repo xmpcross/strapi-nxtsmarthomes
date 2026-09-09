@@ -80,7 +80,7 @@ export default function ProductFilters({
 
         {categories.length > 0 && (
           <section className="mt-6">
-            <h3 className="text-xs font-semibold uppercase tracking-wide text-ink-muted">
+            <h3 className="text-base font-semibold uppercase tracking-wide text-ink-muted">
               Category
             </h3>
             <ul className="mt-2 space-y-0.5">
@@ -121,8 +121,30 @@ export default function ProductFilters({
 
         {brands.length > 1 && (
           <section className="mt-6">
-            <h3 className="text-xs font-semibold uppercase tracking-wide text-ink-muted">Brand</h3>
-            <ul className="mt-2 space-y-0.5">
+            {/* <details> rather than a <select>: the rail is a server component
+                with no client JavaScript, and a native disclosure keeps that
+                property while still allowing several brands at once — a <select>
+                would need a submit button and would collapse to one choice.
+                Opens by default when a brand is active so the reader can always
+                see what is narrowing their results. */}
+            <details className="group" open={selected.size > 0}>
+              <summary className="flex cursor-pointer list-none items-center justify-between gap-2 rounded-lg py-1 [&::-webkit-details-marker]:hidden">
+                <h3 className="text-base font-semibold uppercase tracking-wide text-ink-muted">
+                  Brand
+                  {selected.size > 0 && (
+                    <span className="ml-2 rounded-full bg-primary-soft px-2 py-0.5 text-xs font-semibold normal-case tracking-normal text-primary">
+                      {selected.size}
+                    </span>
+                  )}
+                </h3>
+                <span
+                  aria-hidden="true"
+                  className="text-ink-faint transition-transform group-open:rotate-180"
+                >
+                  ▾
+                </span>
+              </summary>
+            <ul className="mt-2 max-h-72 space-y-0.5 overflow-y-auto pr-1">
               {brands.map((b) => {
                 const key = b.name.toLowerCase();
                 const on = selected.has(key);
@@ -157,11 +179,12 @@ export default function ProductFilters({
                 );
               })}
             </ul>
+            </details>
           </section>
         )}
 
         <section className="mt-6">
-          <h3 className="text-xs font-semibold uppercase tracking-wide text-ink-muted">Sort by</h3>
+          <h3 className="text-base font-semibold uppercase tracking-wide text-ink-muted">Sort by</h3>
           <ul className="mt-2 space-y-0.5">
             {SORTS.map((s) => {
               const on = s.value === activeSort;
