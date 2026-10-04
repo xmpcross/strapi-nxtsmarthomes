@@ -55,6 +55,11 @@ export default async function RootLayout({ children }: { children: React.ReactNo
 
   return (
     <html lang="en" className={geist.variable}>
+      <head>
+        {/* Impact.com site verification. Written verbatim with `value`, as Impact
+            provides it; the metadata API would rewrite `value` to `content`. */}
+        <meta {...({ name: 'impact-site-verification', value: 'f5831ed8-a4bd-4ceb-a40e-be808fe75270' } as Record<string, string>)} />
+      </head>
       <body className="min-h-screen flex flex-col font-sans font-normal" data-testid="app-shell">
         <Header productCategories={productCategories} />
         <main className="flex-1">{children}</main>
