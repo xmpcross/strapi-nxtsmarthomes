@@ -5,6 +5,7 @@ import Header from '@/components/Header';
 import { listProductCategories } from '@/lib/commerce';
 import Footer from '@/components/Footer';
 import CookieConsent from '@/components/CookieConsent';
+import GoogleAnalytics from '@/components/GoogleAnalytics';
 import { jsonLd, organizationJsonLd, websiteJsonLd } from "@/lib/seo";
 import { SITE } from '@/lib/site';
 
@@ -53,9 +54,35 @@ export default async function RootLayout({ children }: { children: React.ReactNo
     title: c.name,
   }));
 
+  const gaId = process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID || '';
+
   return (
     <html lang="en" className={geist.variable}>
       <head>
+        {/*
+          Google tag (GA4), first in <head> and in the server HTML so Google's tag check finds it.
+          Consent Mode: every storage type starts denied, so no cookies are set until the visitor
+          accepts on the cookie banner. A returning visitor who accepted is granted here, before
+          'config'; a choice made on the page is relayed by <GoogleAnalytics />. The library is
+          injected after the defaults: a plain <script async src> would be hoisted above them by
+          React and could run unconsented.
+        */}
+        {gaId ? (
+          <script
+            dangerouslySetInnerHTML={{
+              __html:
+                `window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}` +
+                `gtag('consent','default',{ad_storage:'denied',ad_user_data:'denied',ad_personalization:'denied',` +
+                `analytics_storage:'denied',functionality_storage:'denied',personalization_storage:'denied',` +
+                `security_storage:'granted',wait_for_update:500});` +
+                `try{if(localStorage.getItem('cookie-consent')==='accepted'){gtag('consent','update',{analytics_storage:'granted',` +
+                `ad_storage:'granted',ad_user_data:'granted',ad_personalization:'granted'});}}catch(e){}` +
+                `gtag('js',new Date());gtag('config','${gaId}');` +
+                `(function(){var s=document.createElement('script');s.async=true;` +
+                `s.src='https://www.googletagmanager.com/gtag/js?id=${gaId}';document.head.appendChild(s);})();`,
+            }}
+          />
+        ) : null}
         {/* Impact.com site verification. Written verbatim with `value`, as Impact
             provides it; the metadata API would rewrite `value` to `content`. */}
         <meta {...({ name: 'impact-site-verification', value: 'f5831ed8-a4bd-4ceb-a40e-be808fe75270' } as Record<string, string>)} />
@@ -65,6 +92,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         <main className="flex-1">{children}</main>
         <Footer />
         <CookieConsent />
+        <GoogleAnalytics />
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLd(organizationJsonLd()) }} />
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLd(websiteJsonLd()) }} />
       </body>
