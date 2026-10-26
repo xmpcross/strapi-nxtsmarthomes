@@ -46,7 +46,10 @@ fi
 # A successful build does NOT guarantee new HTML: .next/cache holds prerendered
 # ISR pages and will happily keep serving the previous render. Clearing it costs
 # a few seconds of rebuild and saves a confusing debugging round.
-rm -rf .next/cache
+# Rename first, then delete: the running site keeps writing .next/cache/fetch-cache,
+# so a plain rm -rf races it and fails with "Directory not empty" (26 Oct 2026).
+mv .next/cache ".next/cache.old.$$" 2>/dev/null || true
+rm -rf .next/cache.old.*
 
 # A CMS outage does not fail the build: the site falls back to seed content and
 # restarts looking healthy with content missing -- how the 11 Sep 2026 token
